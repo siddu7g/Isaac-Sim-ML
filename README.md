@@ -31,4 +31,4 @@ r = 3 · (dₜ₋₁ − dₜ)
     + 10.0   if goal reached
 
 
-![PPO Trajactories](resources/trajectories.png)
+![PPO Trajactories](resources/trajectory.png)
