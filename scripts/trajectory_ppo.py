@@ -1,45 +1,22 @@
 #!/usr/bin/env python3
 # ============================================================
 # PX4 + MAVSDK + PPO TRAIN (150 eps) + SAVE .pt + INFERENCE (ep 151)
-#
-# GOAL (RELATIVE TO HOME): (-12, +1)
-#
-# FIXES INCLUDED (your requests):
-#  1) CLEAN distance computation (always 2D in RELATIVE frame)
-#       n_rel = st.n - HOME_N
-#       e_rel = st.e - HOME_E
-#       dist  = hypot(GOAL_DN - n_rel, GOAL_DE - e_rel)
-#
-#  2) Reward re-balance (less timestep pressure, more goal tolerance weight)
-#
-#  3) 15x15 plot/record constraint:
-#       - We record points ONLY if inside [-15,15] x [-15,15] (relative to HOME)
-#       - We ALSO filter again at PLOT TIME (hard guarantee)
-#       - Plot axes are FORCED to [-15,15] (hard guarantee)
-#
-# NOTE:
-#  - "Don't count beyond 15x15" is implemented as: don't record/plot those points.
-#  - The UAV can still physically fly out there; we just won't store/plot it.
 # ============================================================
 
 import asyncio, math, time
 from dataclasses import dataclass
 import numpy as np
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.distributions import Normal
-
 import matplotlib.pyplot as plt
-
 from mavsdk import System
 from mavsdk.offboard import PositionNedYaw, OffboardError
 
 # ============================================================
 # CONFIG
 # ============================================================
-
 SYSTEM_ADDR = "udp://:14540"
 
 CTRL_DT = 0.1
@@ -76,8 +53,6 @@ PPO_EPOCHS = 4
 ENT_COEF = 0.01
 STD_MIN = 0.20
 STD_MAX = 1.20
-
-# Debug prints
 PRINT_EVERY_STEPS = 20
 
 # Plot outputs
@@ -98,10 +73,7 @@ TOL_BAND_M = 2.0            # near-goal shaping radius
 TOL_SHAPE_W = 2.0           # increase to 3–5 if it hovers near goal
 SUCCESS_BONUS = 30.0
 
-# ============================================================
 # TELEMETRY
-# ============================================================
-
 @dataclass
 class Telemetry:
     n: float = 0.0
@@ -128,7 +100,6 @@ async def attitude_task(drone: System, st: Telemetry):
 # ============================================================
 # PPO NETWORK
 # ============================================================
-
 class ActorCritic(nn.Module):
     def __init__(self):
         super().__init__()
@@ -153,10 +124,6 @@ class ActorCritic(nn.Module):
         std = torch.clamp(std, min=STD_MIN, max=STD_MAX)
         v = self.v(x).squeeze(-1)
         return mu, std, v
-
-# ============================================================
-# UTILS
-# ============================================================
 
 def rel_ne(st: Telemetry, home_n: float, home_e: float):
     return (st.n - home_n, st.e - home_e)
@@ -276,7 +243,6 @@ async def hover_reset(drone: System, home_n: float, home_e: float, alt_m: float,
 # ============================================================
 # EPISODES
 # ============================================================
-
 async def run_training_episode(drone, st, model, opt, ep, home_n, home_e):
     await hover_reset(drone, home_n, home_e, TAKEOFF_ALT_M, steps=25)
 
@@ -338,7 +304,7 @@ async def run_training_episode(drone, st, model, opt, ep, home_n, home_e):
             reward += SUCCESS_BONUS
             done = 1.0
             ep_success = True
-
+            
         obs_buf.append(obs)
         act_buf.append(act)
         logp_buf.append(logp)
@@ -356,7 +322,7 @@ async def run_training_episode(drone, st, model, opt, ep, home_n, home_e):
                   f"N_rel,E_rel=({n_rel:+.2f},{e_rel:+.2f}) r={reward:+.3f}")
 
         if done:
-            print(f"[ep {ep:03d}] SUCCESS ✅ steps={len(rew_buf)} dist={dist_now:.2f}")
+            print(f"[ep {ep:03d}] steps={len(rew_buf)} dist={dist_now:.2f}")
             break
 
     # PPO update
@@ -459,15 +425,12 @@ async def run_inference_episode(drone, st, model, ep_label, home_n, home_e):
                       f"N_rel,E_rel=({n_rel:+.2f},{e_rel:+.2f}) r={reward:+.3f}")
 
             if ep_success:
-                print(f"[ep {ep_label:03d}][INFER] SUCCESS ✅ steps={steps} dist={dist_now:.2f}")
+                print(f"[ep {ep_label:03d}][INFER] steps={steps} dist={dist_now:.2f}")
                 break
 
     return {"success": ep_success, "reward_sum": float(reward_sum), "steps": steps, "xy": ep_xy}
 
-# ============================================================
 # MAIN
-# ============================================================
-
 async def main():
     print(f"[mavsdk] connecting via {SYSTEM_ADDR}")
     drone = System()
@@ -490,7 +453,7 @@ async def main():
     await drone.offboard.set_position_ned(PositionNedYaw(st.n, st.e, -TAKEOFF_ALT_M, 0.0))
     try:
         await drone.offboard.start()
-        print("[px4] offboard started ✅")
+        print("[px4] offboard started")
     except OffboardError as e:
         raise RuntimeError(f"Offboard start failed: {e._result.result_str}") from e
 
@@ -529,7 +492,6 @@ async def main():
         inf = await run_inference_episode(drone, st, model, INFER_EPISODE_ID, HOME_N, HOME_E)
         all_trajs.append({"ep": INFER_EPISODE_ID, "xy": inf["xy"], "success": inf["success"], "mode": "infer"})
         print(f"[ep {INFER_EPISODE_ID:03d}][INFER] done steps={inf['steps']} reward={inf['reward_sum']:+.2f} success={inf['success']}")
-
     finally:
         # Plot (HARD clamped and HARD filtered)
         if all_trajs:
@@ -540,7 +502,6 @@ async def main():
             await drone.offboard.stop()
         except Exception:
             pass
-
+            
 if __name__ == "__main__":
     asyncio.run(main())
-
