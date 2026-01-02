@@ -32,3 +32,5 @@ r = 3 · (dₜ₋₁ − dₜ)
 
 
 ![PPO Trajactories](resources/trajectory.png)
+
+## Stage 2: Birds-Eye-View Perception Representation
