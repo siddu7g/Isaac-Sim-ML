@@ -35,5 +35,5 @@ r = 3 · (dₜ₋₁ − dₜ)
 
 ## Stage 2: Birds-Eye-View Perception Representation (ONGOING)
 
-![BEV](perception/camera/bev_view.png)
+![BEV](perception/camera/bev_view2.png)
 
