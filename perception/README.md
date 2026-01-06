@@ -36,4 +36,4 @@ Scene / labels
 S_k(u,v) : semantic mask (pixelwise labels)
 e.g., floor=1, obstacle=2
 
-![Isaac](perception/sensor_viewports.png)
+![Isaac](sensor_viewports.png)
