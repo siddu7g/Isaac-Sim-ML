@@ -33,7 +33,8 @@ r = 3 · (dₜ₋₁ − dₜ)
 
 ![PPO Trajactories](resources/trajectory.png)
 
-## Stage 2: Birds-Eye-View Perception Representation (ONGOING)
+## Stage 2: Birds-Eye-View Perception Mapping (ONGOING)
 
 ![BEV](perception/camera/bev_view1.png)
 
+Figure1: World Environment, Figure2: Quadcopter cam_down FOV 
