@@ -29,4 +29,4 @@ S_k(u,v) : semantic mask (pixelwise labels)
 e.g., floor=1, obstacle=2
 
 ![Isaac](sensor_viewports.png)
-![Isaac](perception/bev_semantic_color_final.png)
+![Isaac](bev_semantic_color_final.png)
