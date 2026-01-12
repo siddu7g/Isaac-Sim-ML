@@ -28,5 +28,4 @@ T_wc = T_wb · T_bc
 S_k(u,v) : semantic mask (pixelwise labels)
 e.g., floor=1, obstacle=2
 
-![Isaac](sensor_viewports.png)
 ![Isaac](bev_semantic_color_final.png)
